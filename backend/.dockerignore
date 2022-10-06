@@ -1,0 +1,10 @@
+.editorconfig
+.git
+.gitattributes
+.gitignore
+.styleci.yml
+Dockerfile
+Jenkinsfile
+README
+README.md
+phpunit.xml

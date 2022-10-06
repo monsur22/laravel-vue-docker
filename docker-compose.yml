@@ -1,0 +1,71 @@
+version: '3.7'
+
+services:
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes: # mount volumes here
+      - "/app/node_modules"
+      - ./frontend:/app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        WITH_XDEBUG: "${WITH_XDEBUG:-false}"
+        BUILD_ENV: "${BUILD_ENV:-dev}"
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "${BACKEND_HTTP_PORT:-8000}:80"
+    depends_on:
+      - database
+    networks:
+      - app-network
+
+  database:
+    container_name: database
+    image: mysql
+    ports:
+      - "${MYSQL_PORT:-3336}:3306"
+    volumes:
+      - ./dump/:/docker-entrypoint-initdb.d/
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-dental_manage}"
+      MYSQL_USER: "${MYSQL_USER:-app}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-secret}"
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: "pma"
+    restart: always
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+      PMA_USER: "${MYSQL_USER:-app}"
+      PMA_PASSWORD: "${MYSQL_PASSWORD:-secret}"
+    networks:
+      - app-network
+
+volumes:
+  mysql-data:
+
+networks:
+  app-network:
+    driver: bridge
